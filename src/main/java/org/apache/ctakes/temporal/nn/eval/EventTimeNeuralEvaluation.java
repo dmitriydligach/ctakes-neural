@@ -43,7 +43,6 @@ import org.apache.ctakes.temporal.eval.I2B2Data;
 import org.apache.ctakes.temporal.eval.THYMEData;
 import org.apache.ctakes.temporal.keras.KerasStringOutcomeDataWriter;
 import org.apache.ctakes.temporal.keras.ScriptStringFeatureDataWriter;
-import org.apache.ctakes.temporal.nn.ae.EventTimePositionBasedAnnotator;
 import org.apache.ctakes.temporal.nn.ae.EventTimeTokenBasedAnnotator;
 import org.apache.ctakes.temporal.utils.AnnotationIdCollection;
 import org.apache.ctakes.temporal.utils.TLinkTypeArray2;

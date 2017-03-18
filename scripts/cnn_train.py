@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sklearn as sk
 import numpy as np
 np.random.seed(1337)
 import et_cleartk_io as ctk_io
