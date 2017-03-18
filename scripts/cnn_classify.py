@@ -14,9 +14,9 @@ def main(args):
         sys.exit(-1)
     working_dir = args[0]
 
+    # model_dir = '/Users/Dima/Git/ctakes-neural/target/eval/thyme/train_and_test/event-time/'
     target_dir = 'ctakes-neural/target/eval/thyme/train_and_test/event-time/'
-    model_dir = '/Users/Dima/Git/ctakes-neural/target/eval/thyme/train_and_test/event-time/'
-    # model_dir = os.path.join(os.environ['CTAKES_ROOT'], target_dir)
+    model_dir = os.path.join(os.environ['CTAKES_ROOT'], target_dir)
     maxlen   = pickle.load(open(os.path.join(model_dir, "maxlen.p"), "rb"))
     word2int = pickle.load(open(os.path.join(model_dir, "word2int.p"), "rb"))
     label2int = pickle.load(open(os.path.join(model_dir, "label2int.p"), "rb"))
