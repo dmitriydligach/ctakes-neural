@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.apache.ctakes.relationextractor.ae.features.TokenFeaturesExtractor;
 import org.apache.ctakes.temporal.ae.TemporalRelationExtractorAnnotator.IdentifiedAnnotationPair;
-import org.apache.ctakes.temporal.nn.data.ArgContextProvider;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
 import org.apache.ctakes.typesystem.type.relation.TemporalTextRelation;
@@ -77,29 +76,6 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
           features.add(new Feature("hello"));
         }
         
-//        System.out.println(sentence.getCoveredText());
-//        System.out.println(arg1.getCoveredText() + " / " + arg2.getCoveredText());
-//        for(Feature f : fs) {
-//          System.out.println(f);
-//        }
-//        System.out.println();
-        
-//        String context;
-//        if(arg2.getBegin() < arg1.getBegin()) {
-//          // ... time ... event ... scenario
-//          context = ArgContextProvider.getTokenContext(jCas, sentence, arg2, "t", arg1, "e", 2);
-//        } else {
-//          // ... event ... time ... scenario
-//          context = ArgContextProvider.getTokenContext(jCas, sentence, arg1, "e", arg2, "t", 2);
-//        }
-//
-//        // derive features based on context
-//        List<Feature> features = new ArrayList<>();
-//        String [] tokens = context.split(" ");
-//        for(String token: tokens){
-//          features.add(new Feature(token.toLowerCase()));
-//        }
-
         // during training, feed the features to the data writer
         if(this.isTraining()) {
           String category = getRelationCategory(relationLookup, arg1, arg2);
