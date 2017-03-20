@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.ctakes.relationextractor.ae.features.TokenFeaturesExtractor;
 import org.apache.ctakes.temporal.ae.TemporalRelationExtractorAnnotator.IdentifiedAnnotationPair;
+import org.apache.ctakes.temporal.ae.feature.UnexpandedTokenFeaturesExtractor;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
 import org.apache.ctakes.typesystem.type.relation.TemporalTextRelation;
@@ -67,13 +67,14 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
         IdentifiedAnnotation arg1 = pair.getArg1();
         IdentifiedAnnotation arg2 = pair.getArg2();
 
-        TokenFeaturesExtractor tokenFeatureExtractor = new TokenFeaturesExtractor();
+        UnexpandedTokenFeaturesExtractor tokenFeatureExtractor = new UnexpandedTokenFeaturesExtractor();
         List<Feature> raw = tokenFeatureExtractor.extract(jCas, arg1, arg2);
         
         List<Feature> features = new ArrayList<>();
         for(Feature feature : raw) {
-          // features.add(new Feature(feature.getName() + "_" + feature.getValue()));
-          features.add(new Feature("hello"));
+          String featureName = feature.getName().replaceAll("[\r\n]", " ");
+          String featureValue = feature.getValue().toString().replaceAll("[\r\n]", " ");
+          features.add(new Feature(featureName + "_" + featureValue));
         }
         
         // during training, feed the features to the data writer
