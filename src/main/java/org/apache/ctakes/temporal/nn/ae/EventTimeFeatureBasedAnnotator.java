@@ -2,6 +2,7 @@ package org.apache.ctakes.temporal.nn.ae;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,33 +120,44 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
     }
   }
   
-  /** Dima's way of getting lables
-   * @param relationLookup
-   * @param arg1
-   * @param arg2
-   * @return
-   */
-  protected String getRelationCategory(Map<List<Annotation>, BinaryTextRelation> relationLookup,
-      IdentifiedAnnotation arg1,
-      IdentifiedAnnotation arg2){
-    BinaryTextRelation relation = relationLookup.get(Arrays.asList(arg1, arg2));
-    String category = null;
-    if (relation != null) {
-      category = relation.getCategory();
-      if(arg1 instanceof EventMention){
-        category = category + "-1";
+  public List<IdentifiedAnnotationPair> getCandidateRelationArgumentPairs(
+      JCas jCas,
+      Annotation sentence) {
+    Map<EventMention, Collection<EventMention>> coveringMap =
+        JCasUtil.indexCovering(jCas, EventMention.class, EventMention.class);
+
+    List<IdentifiedAnnotationPair> pairs = Lists.newArrayList();
+    for (EventMention event : JCasUtil.selectCovered(jCas, EventMention.class, sentence)) {
+      boolean eventValid = false;
+      if (event.getClass().equals(EventMention.class)) {//event is a gold event
+//        for( EventMention aEve : JCasUtil.selectCovered(jCas, EventMention.class, event)){
+//          if(!aEve.getClass().equals(EventMention.class)){//this event cover a UMLS semantic type
+            eventValid = true;
+//            break;
+//          }
+//        }
       }
-    } else {
-      relation = relationLookup.get(Arrays.asList(arg2, arg1));
-      if (relation != null) {
-        category = relation.getCategory();
-        if(arg2 instanceof EventMention){
-          category = category + "-1";
+
+      if(eventValid){
+        // ignore subclasses like Procedure and Disease/Disorder
+        if(this.isTraining()){//if training mode, train on both gold event and span-overlapping system events
+          for (TimeMention time : JCasUtil.selectCovered(jCas, TimeMention.class, sentence)) {
+            
+            Collection<EventMention> eventList = coveringMap.get(event);
+            for(EventMention covEvent : eventList){
+              pairs.add(new IdentifiedAnnotationPair(covEvent, time));
+            }
+            pairs.add(new IdentifiedAnnotationPair(event, time));
+          }
+        }else{//if testing mode, only test on system generated events
+          for (TimeMention time : JCasUtil.selectCovered(jCas, TimeMention.class, sentence)) {
+            pairs.add(new IdentifiedAnnotationPair(event, time));
+          }
         }
       }
     }
-    return category;
 
+    return pairs;
   }
 
   protected void createRelation(JCas jCas, IdentifiedAnnotation arg1,
@@ -166,16 +178,37 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
     relation.addToIndexes();
   }
 
-  public List<IdentifiedAnnotationPair> getCandidateRelationArgumentPairs(JCas jCas, Annotation sentence) {
-    List<IdentifiedAnnotationPair> pairs = Lists.newArrayList();
-    for (EventMention event : JCasUtil.selectCovered(jCas, EventMention.class, sentence)) {
-      // ignore subclasses like Procedure and Disease/Disorder
-      if (event.getClass().equals(EventMention.class)) {
-        for (TimeMention time : JCasUtil.selectCovered(jCas, TimeMention.class, sentence)) {
-          pairs.add(new IdentifiedAnnotationPair(event, time));
+  protected String getRelationCategory(
+      Map<List<Annotation>, BinaryTextRelation> relationLookup,
+      IdentifiedAnnotation arg1,
+      IdentifiedAnnotation arg2) {
+    BinaryTextRelation relation = relationLookup.get(Arrays.asList(arg1, arg2));
+    String category = null;
+    if (relation != null) {
+      category = relation.getCategory();
+    } else {
+      relation = relationLookup.get(Arrays.asList(arg2, arg1));
+      if (relation != null) {
+        if(relation.getCategory().equals("OVERLAP")){
+          category = relation.getCategory();
+          //        }else if (relation.getCategory().equals("BEFORE")){
+          //          category = "AFTER";
+          //        }else if (relation.getCategory().equals("AFTER")){
+          //          category = "BEFORE";
+          //        }
+        }else{
+          category = relation.getCategory() + "-1";
         }
       }
     }
-    return pairs;
+
+    // if (category == null && coin.nextDouble() <= this.probabilityOfKeepingANegativeExample) {
+    if(category == null) {
+      category = NO_RELATION_CATEGORY;
+    }
+
+    return category;
   }
+  
+
 }
