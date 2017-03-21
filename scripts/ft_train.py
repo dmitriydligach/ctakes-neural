@@ -2,8 +2,8 @@
 
 import numpy as np
 np.random.seed(1337)
-import et_cleartk_io as ctk_io
-import nn_models
+import lib.et_cleartk_io as ctk_io
+import lib.nn_models
 import sys
 import os.path
 import dataset
