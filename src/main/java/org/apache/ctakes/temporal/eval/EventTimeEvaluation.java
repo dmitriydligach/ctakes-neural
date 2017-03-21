@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.ctakes.relationextractor.eval.RelationExtractorEvaluation.HashableArguments;
-import org.apache.ctakes.temporal.ae.EventTimeFeatureBasedAnnotator;
+import org.apache.ctakes.temporal.ae.EventTimeTokenBasedAnnotator;
 import org.apache.ctakes.temporal.ae.baselines.RecallBaselineEventTimeRelationAnnotator;
 import org.apache.ctakes.temporal.eval.EvaluationOfEventTimeRelations.ParameterSettings;
 import org.apache.ctakes.temporal.keras.KerasStringOutcomeDataWriter;
@@ -285,7 +285,7 @@ public class EventTimeEvaluation extends EvaluationOfTemporalRelations_ImplBase{
       aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(Overlap2Contains.class));
 
       aggregateBuilder.add(
-          AnalysisEngineFactory.createEngineDescription(EventTimeFeatureBasedAnnotator.class,
+          AnalysisEngineFactory.createEngineDescription(EventTimeTokenBasedAnnotator.class,
               CleartkAnnotator.PARAM_IS_TRAINING,
               true,
               DefaultDataWriterFactory.PARAM_DATA_WRITER_CLASS_NAME,
@@ -337,7 +337,7 @@ public class EventTimeEvaluation extends EvaluationOfTemporalRelations_ImplBase{
 
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveRelations.class));
     aggregateBuilder.add(this.baseline ? RecallBaselineEventTimeRelationAnnotator.createAnnotatorDescription(directory) :
-      AnalysisEngineFactory.createEngineDescription(EventTimeFeatureBasedAnnotator.class,
+      AnalysisEngineFactory.createEngineDescription(EventTimeTokenBasedAnnotator.class,
           CleartkAnnotator.PARAM_IS_TRAINING,
           false,
           GenericJarClassifierFactory.PARAM_CLASSIFIER_JAR_PATH,
