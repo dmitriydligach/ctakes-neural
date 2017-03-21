@@ -56,6 +56,8 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
       }
     }
 
+    UnexpandedTokenFeaturesExtractor tokenFeatureExtractor = new UnexpandedTokenFeaturesExtractor();
+    
     // go over sentences, extracting event-time relation instances
     for(Sentence sentence : JCasUtil.select(jCas, Sentence.class)) {
       // collect all relevant relation arguments from the sentence
@@ -67,7 +69,6 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
         IdentifiedAnnotation arg1 = pair.getArg1();
         IdentifiedAnnotation arg2 = pair.getArg2();
 
-        UnexpandedTokenFeaturesExtractor tokenFeatureExtractor = new UnexpandedTokenFeaturesExtractor();
         List<Feature> raw = tokenFeatureExtractor.extract(jCas, arg1, arg2);
 
         List<Feature> features = new ArrayList<>();
