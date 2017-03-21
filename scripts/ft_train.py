@@ -6,7 +6,7 @@ import lib.et_cleartk_io as ctk_io
 import lib.nn_models
 import sys
 import os.path
-import dataset_ngram as dataset
+import dataset
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
 from keras.preprocessing.sequence import pad_sequences
