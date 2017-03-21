@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.ctakes.temporal.nn.eval;
+package org.apache.ctakes.temporal.eval;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,15 +35,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.ctakes.relationextractor.eval.RelationExtractorEvaluation.HashableArguments;
+import org.apache.ctakes.temporal.ae.EventTimeFeatureBasedAnnotator;
 import org.apache.ctakes.temporal.ae.baselines.RecallBaselineEventTimeRelationAnnotator;
 import org.apache.ctakes.temporal.eval.EvaluationOfEventTimeRelations.ParameterSettings;
-import org.apache.ctakes.temporal.eval.EvaluationOfTemporalRelations_ImplBase;
-import org.apache.ctakes.temporal.eval.Evaluation_ImplBase;
-import org.apache.ctakes.temporal.eval.I2B2Data;
-import org.apache.ctakes.temporal.eval.THYMEData;
 import org.apache.ctakes.temporal.keras.KerasStringOutcomeDataWriter;
 import org.apache.ctakes.temporal.keras.ScriptStringFeatureDataWriter;
-import org.apache.ctakes.temporal.nn.ae.EventTimeFeatureBasedAnnotator;
 import org.apache.ctakes.temporal.utils.AnnotationIdCollection;
 import org.apache.ctakes.temporal.utils.TLinkTypeArray2;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
