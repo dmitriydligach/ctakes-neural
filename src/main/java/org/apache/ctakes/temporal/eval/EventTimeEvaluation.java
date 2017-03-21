@@ -83,7 +83,7 @@ import com.google.common.collect.Sets;
 import com.lexicalscope.jewel.cli.CliFactory;
 import com.lexicalscope.jewel.cli.Option;
 
-public class EventTimeNeuralEvaluation extends EvaluationOfTemporalRelations_ImplBase{
+public class EventTimeEvaluation extends EvaluationOfTemporalRelations_ImplBase{
   static interface TempRelOptions extends Evaluation_ImplBase.Options{
     @Option
     public boolean getPrintFormattedRelations();
@@ -157,7 +157,7 @@ public class EventTimeNeuralEvaluation extends EvaluationOfTemporalRelations_Imp
         tempModelDir.mkdir();
         workingDir = tempModelDir;
       }
-      EventTimeNeuralEvaluation evaluation = new EventTimeNeuralEvaluation(
+      EventTimeEvaluation evaluation = new EventTimeEvaluation(
           workingDir,
           options.getRawTextDirectory(),
           options.getXMLDirectory(),
@@ -230,7 +230,7 @@ public class EventTimeNeuralEvaluation extends EvaluationOfTemporalRelations_Imp
   protected boolean testOnTrain=false;
   //  protected boolean printRelations = false;
 
-  public EventTimeNeuralEvaluation(
+  public EventTimeEvaluation(
       File baseDirectory,
       File rawTextDirectory,
       File xmlDirectory,
