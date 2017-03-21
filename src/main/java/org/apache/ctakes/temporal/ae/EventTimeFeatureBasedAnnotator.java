@@ -7,7 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ctakes.temporal.ae.TemporalRelationExtractorAnnotator.IdentifiedAnnotationPair;
+import org.apache.ctakes.temporal.ae.feature.CheckSpecialWordRelationExtractor;
+import org.apache.ctakes.temporal.ae.feature.ConjunctionRelationFeaturesExtractor;
+import org.apache.ctakes.temporal.ae.feature.DependencyPathFeaturesExtractor;
+import org.apache.ctakes.temporal.ae.feature.EventArgumentPropertyExtractor;
 import org.apache.ctakes.temporal.ae.feature.NearestFlagFeatureExtractor;
+import org.apache.ctakes.temporal.ae.feature.TemporalAttributeFeatureExtractor;
 import org.apache.ctakes.temporal.ae.feature.UnexpandedTokenFeaturesExtractor;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
@@ -57,8 +62,13 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
       }
     }
 
-    UnexpandedTokenFeaturesExtractor tokenFeatureExtractor = new UnexpandedTokenFeaturesExtractor();
-    NearestFlagFeatureExtractor nearestFlagFeatureExtractor = new NearestFlagFeatureExtractor();
+    UnexpandedTokenFeaturesExtractor fe1 = new UnexpandedTokenFeaturesExtractor();
+    NearestFlagFeatureExtractor fe2 = new NearestFlagFeatureExtractor();
+    DependencyPathFeaturesExtractor fe3 = new DependencyPathFeaturesExtractor();
+    EventArgumentPropertyExtractor fe4 = new EventArgumentPropertyExtractor();
+    ConjunctionRelationFeaturesExtractor fe5 = new ConjunctionRelationFeaturesExtractor();
+    CheckSpecialWordRelationExtractor fe6 = new CheckSpecialWordRelationExtractor();
+    TemporalAttributeFeatureExtractor fe7 = new TemporalAttributeFeatureExtractor();
     
     // go over sentences, extracting event-time relation instances
     for(Sentence sentence : JCasUtil.select(jCas, Sentence.class)) {
@@ -72,17 +82,30 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
         IdentifiedAnnotation arg2 = pair.getArg2();
 
         List<Feature> allCleartkFeatures = new ArrayList<>();
-        List<Feature> tokenFeatures = tokenFeatureExtractor.extract(jCas, arg1, arg2);
-        List<Feature> flagFeatures = nearestFlagFeatureExtractor.extract(jCas, arg1, arg2);
-        allCleartkFeatures.addAll(tokenFeatures);
-        allCleartkFeatures.addAll(flagFeatures);
         
+        List<Feature> f1 = fe1.extract(jCas, arg1, arg2);
+        List<Feature> f2 = fe2.extract(jCas, arg1, arg2);
+        List<Feature> f3 = fe3.extract(jCas, arg1, arg2);
+        List<Feature> f4 = fe4.extract(jCas, arg1, arg2);
+        List<Feature> f5 = fe5.extract(jCas, arg1, arg2);
+        List<Feature> f6 = fe6.extract(jCas, arg1, arg2);
+        List<Feature> f7 = fe7.extract(jCas, arg1, arg2);
+        
+        if (f1 != null) allCleartkFeatures.addAll(f1);
+        if (f2 != null) allCleartkFeatures.addAll(f2);
+        if (f3 != null) allCleartkFeatures.addAll(f3);
+        if (f4 != null) allCleartkFeatures.addAll(f4);
+        if (f5 != null) allCleartkFeatures.addAll(f5);
+        if (f6 != null) allCleartkFeatures.addAll(f6);
+        if (f7 != null) allCleartkFeatures.addAll(f7);
         
         List<Feature> allBinaryFeatures = new ArrayList<>();
         for(Feature feature : allCleartkFeatures) {
-          String featureName = feature.getName().replaceAll("[\r\n]", " ");
-          String featureValue = feature.getValue().toString().replaceAll("[\r\n]", " ");
-          allBinaryFeatures.add(new Feature(featureName + "_" + featureValue));
+          if(feature.getName() != null) {
+            String featureName = feature.getName().replaceAll("[\r\n]", " ");
+            String featureValue = feature.getValue().toString().replaceAll("[\r\n]", " ");
+            allBinaryFeatures.add(new Feature(featureName + "_" + featureValue));
+          }
         }
 
         // during training, feed the features to the data writer
