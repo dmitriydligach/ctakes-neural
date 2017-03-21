@@ -48,8 +48,7 @@ def main(args):
                         input_length=maxlen))
     model.add(GlobalAveragePooling1D())
 
-    model.add(Dropout(0.25))
-    model.add(Dense(1000))
+    model.add(Dense(100))
     model.add(Activation('relu'))
 
     model.add(Dense(classes))
@@ -61,7 +60,7 @@ def main(args):
                   metrics=['accuracy'])
     model.fit(train_x,
               train_y,
-              nb_epoch=3,
+              nb_epoch=5,
               batch_size=50,
               verbose=0,
               validation_split=0.0,
