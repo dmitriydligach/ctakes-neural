@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ctakes.temporal.ae.TemporalRelationExtractorAnnotator.IdentifiedAnnotationPair;
+import org.apache.ctakes.temporal.ae.feature.NearestFlagFeatureExtractor;
 import org.apache.ctakes.temporal.ae.feature.UnexpandedTokenFeaturesExtractor;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
@@ -57,6 +58,7 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
     }
 
     UnexpandedTokenFeaturesExtractor tokenFeatureExtractor = new UnexpandedTokenFeaturesExtractor();
+    NearestFlagFeatureExtractor nearestFlagFeatureExtractor = new NearestFlagFeatureExtractor();
     
     // go over sentences, extracting event-time relation instances
     for(Sentence sentence : JCasUtil.select(jCas, Sentence.class)) {
@@ -69,13 +71,18 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
         IdentifiedAnnotation arg1 = pair.getArg1();
         IdentifiedAnnotation arg2 = pair.getArg2();
 
-        List<Feature> raw = tokenFeatureExtractor.extract(jCas, arg1, arg2);
-
-        List<Feature> features = new ArrayList<>();
-        for(Feature feature : raw) {
+        List<Feature> allCleartkFeatures = new ArrayList<>();
+        List<Feature> tokenFeatures = tokenFeatureExtractor.extract(jCas, arg1, arg2);
+        List<Feature> flagFeatures = nearestFlagFeatureExtractor.extract(jCas, arg1, arg2);
+        allCleartkFeatures.addAll(tokenFeatures);
+        allCleartkFeatures.addAll(flagFeatures);
+        
+        
+        List<Feature> allBinaryFeatures = new ArrayList<>();
+        for(Feature feature : allCleartkFeatures) {
           String featureName = feature.getName().replaceAll("[\r\n]", " ");
           String featureValue = feature.getValue().toString().replaceAll("[\r\n]", " ");
-          features.add(new Feature(featureName + "_" + featureValue));
+          allBinaryFeatures.add(new Feature(featureName + "_" + featureValue));
         }
 
         // during training, feed the features to the data writer
@@ -86,12 +93,12 @@ public class EventTimeFeatureBasedAnnotator extends CleartkAnnotator<String> {
           } else{
             category = category.toLowerCase();
           }
-          this.dataWriter.write(new Instance<>(category, features));
+          this.dataWriter.write(new Instance<>(category, allBinaryFeatures));
         }
 
         // during classification feed the features to the classifier and create annotations
         else {
-          String predictedCategory = this.classifier.classify(features);
+          String predictedCategory = this.classifier.classify(allBinaryFeatures);
 
           // add a relation annotation if a true relation was predicted
           if(predictedCategory != null && !predictedCategory.equals(NO_RELATION_CATEGORY)) {
