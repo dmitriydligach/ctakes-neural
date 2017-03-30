@@ -38,9 +38,9 @@ import org.apache.ctakes.temporal.eval.EvaluationOfEventEventThymeRelations.Remo
 import org.apache.ctakes.temporal.eval.EvaluationOfEventTimeRelations.ParameterSettings;
 import org.apache.ctakes.temporal.keras.KerasStringOutcomeDataWriter;
 import org.apache.ctakes.temporal.keras.ScriptStringFeatureDataWriter;
-import org.apache.ctakes.temporal.nn.ae.EventEventPositionBasedAnnotator;
 import org.apache.ctakes.temporal.utils.AnnotationIdCollection;
 import org.apache.ctakes.temporal.utils.TLinkTypeArray2;
+import org.apache.ctakes.thyme.ae.EventEventFeatureBasedAnnotator;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
 import org.apache.ctakes.typesystem.type.relation.TemporalTextRelation;
@@ -290,7 +290,7 @@ EvaluationOfTemporalRelations_ImplBase{
       aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(Overlap2Contains.class));
 
       aggregateBuilder.add(
-          AnalysisEngineFactory.createEngineDescription(EventEventPositionBasedAnnotator.class,
+          AnalysisEngineFactory.createEngineDescription(EventEventFeatureBasedAnnotator.class,
               CleartkAnnotator.PARAM_IS_TRAINING,
               true,
               DefaultDataWriterFactory.PARAM_DATA_WRITER_CLASS_NAME,
@@ -298,7 +298,7 @@ EvaluationOfTemporalRelations_ImplBase{
               DirectoryDataWriterFactory.PARAM_OUTPUT_DIRECTORY,
               new File(directory,"event-event"),
               ScriptStringFeatureDataWriter.PARAM_SCRIPT_DIR,
-              "scripts/nn/"
+              "scripts/"
               ) );
 
       SimplePipeline.runPipeline(collectionReader, aggregateBuilder.createAggregate());
@@ -343,7 +343,7 @@ EvaluationOfTemporalRelations_ImplBase{
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveRelations.class));
     
     aggregateBuilder.add(this.baseline ? RecallBaselineEventTimeRelationAnnotator.createAnnotatorDescription(directory) :
-      AnalysisEngineFactory.createEngineDescription(EventEventPositionBasedAnnotator.class,
+      AnalysisEngineFactory.createEngineDescription(EventEventFeatureBasedAnnotator.class,
           CleartkAnnotator.PARAM_IS_TRAINING,
           false,
           GenericJarClassifierFactory.PARAM_CLASSIFIER_JAR_PATH,

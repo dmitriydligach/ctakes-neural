@@ -1,4 +1,4 @@
-package org.apache.ctakes.temporal.ae;
+package org.apache.ctakes.thyme.ae;
 
 import java.util.ArrayList;
 import java.util.Arrays;
