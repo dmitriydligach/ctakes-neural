@@ -1,7 +1,10 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+
+import org.apache.ctakes.temporal.keras.KerasStringOutcomeClassifierBuilder;
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeDataWriter;
 
 import com.google.common.annotations.Beta;
 

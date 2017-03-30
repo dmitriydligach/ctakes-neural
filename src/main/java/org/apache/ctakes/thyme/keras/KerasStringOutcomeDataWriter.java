@@ -1,8 +1,10 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import org.apache.ctakes.temporal.keras.KerasStringOutcomeClassifierBuilder;
+import org.apache.ctakes.temporal.keras.ScriptStringFeatureDataWriter;
 import org.cleartk.ml.CleartkProcessingException;
 import org.cleartk.ml.util.featurevector.FeatureVector;
 

@@ -1,4 +1,4 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeClassifier;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.util.Level;
 import org.apache.uima.util.Logger;

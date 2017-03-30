@@ -1,4 +1,4 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -1,9 +1,11 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Locale;
 
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeClassifier;
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeClassifierBuilder;
 import org.apache.uima.UimaContext;
 import org.apache.uima.fit.descriptor.ConfigurationParameter;
 import org.apache.uima.fit.factory.initializable.Initializable;

@@ -1,7 +1,8 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.File;
 
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeClassifier;
 import org.cleartk.ml.encoder.features.FeaturesEncoder;
 import org.cleartk.ml.encoder.outcome.OutcomeEncoder;
 import org.cleartk.ml.util.featurevector.FeatureVector;

@@ -1,10 +1,13 @@
-package org.apache.ctakes.temporal.keras;
+package org.apache.ctakes.thyme.keras;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 
+import org.apache.ctakes.temporal.keras.KerasStringOutcomeClassifier;
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeClassifier;
+import org.apache.ctakes.temporal.keras.ScriptStringOutcomeClassifierBuilder;
 import org.apache.uima.util.Level;
 import org.cleartk.ml.jar.JarStreams;
 
