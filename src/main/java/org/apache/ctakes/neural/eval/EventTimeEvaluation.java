@@ -16,23 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.ctakes.thyme.eval;
+package org.apache.ctakes.neural.eval;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.ctakes.neural.ae.EventEventFeatureBasedAnnotator;
+import org.apache.ctakes.neural.ae.EventTimeFeatureBasedAnnotator;
 import org.apache.ctakes.neural.keras.KerasStringOutcomeDataWriter;
 import org.apache.ctakes.neural.keras.ScriptStringFeatureDataWriter;
 import org.apache.ctakes.relationextractor.eval.RelationExtractorEvaluation.HashableArguments;
@@ -41,7 +43,6 @@ import org.apache.ctakes.temporal.eval.EvaluationOfTemporalRelations_ImplBase;
 import org.apache.ctakes.temporal.eval.Evaluation_ImplBase;
 import org.apache.ctakes.temporal.eval.I2B2Data;
 import org.apache.ctakes.temporal.eval.THYMEData;
-import org.apache.ctakes.temporal.eval.EvaluationOfEventEventThymeRelations.RemoveCrossSentenceRelations;
 import org.apache.ctakes.temporal.eval.EvaluationOfEventTimeRelations.ParameterSettings;
 import org.apache.ctakes.temporal.utils.AnnotationIdCollection;
 import org.apache.ctakes.temporal.utils.TLinkTypeArray2;
@@ -50,7 +51,9 @@ import org.apache.ctakes.typesystem.type.relation.RelationArgument;
 import org.apache.ctakes.typesystem.type.relation.TemporalTextRelation;
 import org.apache.ctakes.typesystem.type.syntax.WordToken;
 import org.apache.ctakes.typesystem.type.textsem.EventMention;
+import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
 import org.apache.ctakes.typesystem.type.textsem.TimeMention;
+import org.apache.ctakes.typesystem.type.textspan.Sentence;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.CASException;
@@ -84,8 +87,7 @@ import com.google.common.collect.Sets;
 import com.lexicalscope.jewel.cli.CliFactory;
 import com.lexicalscope.jewel.cli.Option;
 
-public class EventEventEvaluation extends
-EvaluationOfTemporalRelations_ImplBase{
+public class EventTimeEvaluation extends EvaluationOfTemporalRelations_ImplBase{
   static interface TempRelOptions extends Evaluation_ImplBase.Options{
     @Option
     public boolean getPrintFormattedRelations();
@@ -112,8 +114,6 @@ EvaluationOfTemporalRelations_ImplBase{
     public boolean getSkipWrite();
   }
 
-  //  defaultParams = new ParameterSettings(DEFAULT_BOTH_DIRECTIONS, DEFAULT_DOWNSAMPLE, "tk",
-  //  		  DEFAULT_SVM_C, DEFAULT_SVM_G, "polynomial", ComboOperator.SUM, DEFAULT_TK, DEFAULT_LAMBDA);
   protected static ParameterSettings flatParams = new ParameterSettings(DEFAULT_BOTH_DIRECTIONS, DEFAULT_DOWNSAMPLE, "linear",
       10.0, 1.0, "linear", ComboOperator.VECTOR_ONLY, DEFAULT_TK, DEFAULT_LAMBDA);
   protected static ParameterSettings allBagsParams = new ParameterSettings(DEFAULT_BOTH_DIRECTIONS, DEFAULT_DOWNSAMPLE, "tk", 
@@ -153,7 +153,7 @@ EvaluationOfTemporalRelations_ImplBase{
     ParameterSettings params = allParams;
 
     try{
-      File workingDir = new File("target/eval/thyme/"); 
+      File workingDir = new File("target/eval/thyme/");
       if(!workingDir.exists()) workingDir.mkdirs();
       if(options.getUseTmp()){
         File tempModelDir = File.createTempFile("temporal", null, workingDir);
@@ -161,7 +161,7 @@ EvaluationOfTemporalRelations_ImplBase{
         tempModelDir.mkdir();
         workingDir = tempModelDir;
       }
-      EventEventEvaluation evaluation = new EventEventEvaluation(
+      EventTimeEvaluation evaluation = new EventTimeEvaluation(
           workingDir,
           options.getRawTextDirectory(),
           options.getXMLDirectory(),
@@ -177,7 +177,7 @@ EvaluationOfTemporalRelations_ImplBase{
           options.getKernelParams(),
           params);
 
-      if(options.getI2B2Output()!=null) evaluation.setI2B2Output(options.getI2B2Output() + "/temporal-relations/event-event");
+      if(options.getI2B2Output()!=null) evaluation.setI2B2Output(options.getI2B2Output() + "/temporal-relations/event-time");
       if(options.getAnaforaOutput()!=null) evaluation.anaforaOutput = options.getAnaforaOutput();
       List<Integer> training = trainItems;
       List<Integer> testing = null;
@@ -225,14 +225,16 @@ EvaluationOfTemporalRelations_ImplBase{
     }
   }
 
+  //  private ParameterSettings params;
   private boolean baseline;
   protected boolean useClosure;
   protected boolean useGoldAttributes;
   protected boolean skipTrain=false;
   public boolean skipWrite = false;
   protected boolean testOnTrain=false;
+  //  protected boolean printRelations = false;
 
-  public EventEventEvaluation(
+  public EventTimeEvaluation(
       File baseDirectory,
       File rawTextDirectory,
       File xmlDirectory,
@@ -279,44 +281,37 @@ EvaluationOfTemporalRelations_ImplBase{
       if(!this.useGoldAttributes){
         aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveGoldAttributes.class));
       }
-      aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(PreserveEventEventRelations.class));
-
       if (this.useClosure) {
-        //			aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(AddClosure.class));//aggregateBuilder.add(AnalysisEngineFactory.createPrimitiveDescription(AddTransitiveContainsRelations.class));
-        //			aggregateBuilder.add(AnalysisEngineFactory.createPrimitiveDescription(AddContain2Overlap.class));
-        //			aggregateBuilder.add(AnalysisEngineFactory.createPrimitiveDescription(AddTransitiveBeforeAndOnRelations.class));
       }
-      
+
+      aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveEventEventRelations.class));
       aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveNonContainsRelations.class));
-      
-      // aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveNonUMLSEvents.class));
-      
       aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(Overlap2Contains.class));
 
       aggregateBuilder.add(
-          AnalysisEngineFactory.createEngineDescription(EventEventFeatureBasedAnnotator.class,
+          AnalysisEngineFactory.createEngineDescription(EventTimeFeatureBasedAnnotator.class,
               CleartkAnnotator.PARAM_IS_TRAINING,
               true,
               DefaultDataWriterFactory.PARAM_DATA_WRITER_CLASS_NAME,
               KerasStringOutcomeDataWriter.class,
               DirectoryDataWriterFactory.PARAM_OUTPUT_DIRECTORY,
-              new File(directory,"event-event"),
+              new File(directory,"event-time"),
               ScriptStringFeatureDataWriter.PARAM_SCRIPT_DIR,
               "scripts/"
-              ) );
+              ));
 
       SimplePipeline.runPipeline(collectionReader, aggregateBuilder.createAggregate());
     }
     
-    JarClassifierBuilder.trainAndPackage(new File(directory,"event-event"));
+    JarClassifierBuilder.trainAndPackage(new File(directory,"event-time"));
   }
 
   @Override
   protected AnnotationStatistics<String> test(CollectionReader collectionReader, File directory)
       throws Exception {
-    this.useClosure=false; //don't do closure for test
-    AggregateBuilder aggregateBuilder = this.getPreprocessorAggregateBuilder();
     
+    this.useClosure = false; // don't do closure for test
+    AggregateBuilder aggregateBuilder = this.getPreprocessorAggregateBuilder();
     aggregateBuilder.add(CopyFromGold.getDescription(EventMention.class, TimeMention.class));
 
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(
@@ -326,32 +321,31 @@ EvaluationOfTemporalRelations_ImplBase{
         RemoveCrossSentenceRelations.PARAM_RELATION_VIEW,
         GOLD_VIEW_NAME));
 
-    aggregateBuilder.add(
-        AnalysisEngineFactory.createEngineDescription(PreserveEventEventRelations.class),
-        CAS.NAME_DEFAULT_SOFA,
-        GOLD_VIEW_NAME);
-
-    if (!recallModeEvaluation && this.useClosure) { //closure for gold
+    if (!recallModeEvaluation && this.useClosure) { // closure for gold
       aggregateBuilder.add(
           AnalysisEngineFactory.createEngineDescription(AddClosure.class),
           CAS.NAME_DEFAULT_SOFA,
           GOLD_VIEW_NAME);
     }
 
+    aggregateBuilder.add(
+        AnalysisEngineFactory.createEngineDescription(RemoveEventEventRelations.class),
+        CAS.NAME_DEFAULT_SOFA,
+        GOLD_VIEW_NAME);
+
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveNonContainsRelations.class),
         CAS.NAME_DEFAULT_SOFA,
         GOLD_VIEW_NAME);
     
-    // aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveNonUMLSEvents.class));
+    //		aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveNonUMLSEtEvents.class));
 
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveRelations.class));
-    
     aggregateBuilder.add(this.baseline ? RecallBaselineEventTimeRelationAnnotator.createAnnotatorDescription(directory) :
-      AnalysisEngineFactory.createEngineDescription(EventEventFeatureBasedAnnotator.class,
+      AnalysisEngineFactory.createEngineDescription(EventTimeFeatureBasedAnnotator.class,
           CleartkAnnotator.PARAM_IS_TRAINING,
           false,
           GenericJarClassifierFactory.PARAM_CLASSIFIER_JAR_PATH,
-          new File(new File(directory,"event-event"), "model.jar").getPath()));
+          new File(new File(directory,"event-time"), "model.jar").getPath()));
 
     //count how many system predicted relations, their arguments are close to each other, without any other event in between
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(CountCloseRelation.class));
@@ -361,17 +355,22 @@ EvaluationOfTemporalRelations_ImplBase{
     }
 
     File outf = null;
-    if (recallModeEvaluation && this.useClosure) { //add closure for system output
+    if (recallModeEvaluation && this.useClosure) {//add closure for system output
       aggregateBuilder.add(
-          AnalysisEngineFactory.createEngineDescription(AddClosure.class),
+          AnalysisEngineFactory.createEngineDescription(AddClosure.class),//AnalysisEngineFactory.createPrimitiveDescription(AddTransitiveContainsRelations.class),
           GOLD_VIEW_NAME,
           CAS.NAME_DEFAULT_SOFA
           );
-      outf =  new File("target/eval/thyme/SystemError_eventEvent_recall_test.txt");
+      aggregateBuilder.add(
+          AnalysisEngineFactory.createEngineDescription(RemoveEventEventRelations.class),
+          GOLD_VIEW_NAME,
+          CAS.NAME_DEFAULT_SOFA
+          );
+      outf =  new File("target/eval/thyme/SystemError_eventTime_recall_test.txt");
     }else if (!recallModeEvaluation && this.useClosure){
-      outf =  new File("target/eval/thyme/SystemError_eventEvent_precision_test.txt");
+      outf =  new File("target/eval/thyme/SystemError_eventTime_precision_test.txt");
     }else{
-      outf =  new File("target/eval/thyme/SystemError_eventEvent_plain_test.txt");
+      outf =  new File("target/eval/thyme/SystemError_eventTime_plain_test.txt");
     }
 
     PrintWriter outDrop =null;
@@ -438,7 +437,52 @@ EvaluationOfTemporalRelations_ImplBase{
     return stats;
   }
 
-  public static class AddEEPotentialRelations extends org.apache.uima.fit.component.JCasAnnotator_ImplBase {
+  public static class RemoveNonUMLSEtEvents extends org.apache.uima.fit.component.JCasAnnotator_ImplBase {
+    public static final String PARAM_GOLD_VIEW = "GoldView";
+
+    @ConfigurationParameter(name = PARAM_GOLD_VIEW,mandatory=false)
+    private String goldViewName = CAS.NAME_DEFAULT_SOFA;
+
+    @Override
+    public void process(JCas jCas) throws AnalysisEngineProcessException {
+      JCas sysView;
+      JCas goldView;
+      try {
+        sysView = jCas.getView(CAS.NAME_DEFAULT_SOFA);
+        goldView = jCas.getView(PARAM_GOLD_VIEW);
+      } catch (CASException e) {
+        throw new AnalysisEngineProcessException(e);
+      }
+      for(TemporalTextRelation relation : Lists.newArrayList(JCasUtil.select(goldView, TemporalTextRelation.class))){
+        Annotation arg1 = relation.getArg1().getArgument();
+        Annotation arg2 = relation.getArg2().getArgument();
+        Annotation argEvent = null;
+        if(arg1 instanceof EventMention && arg2 instanceof TimeMention){
+          argEvent = arg1;
+        }else if(arg1 instanceof TimeMention && arg2 instanceof EventMention){
+          argEvent = arg2;
+        }else{
+          continue;
+        }
+        boolean eventValid = false;
+        for (EventMention event : JCasUtil.selectCovered(sysView, EventMention.class, argEvent)){
+          if(!event.getClass().equals(EventMention.class)){
+            eventValid = true;
+            break;
+          }
+        }
+        if(eventValid){
+          // these are the kind we keep.
+          continue;
+        }
+        arg1.removeFromIndexes();
+        arg2.removeFromIndexes();
+        relation.removeFromIndexes();
+      }
+    }   
+  }
+
+  public static class RemoveEventEventRelations extends JCasAnnotator_ImplBase {
     public static final String PARAM_RELATION_VIEW = "RelationView";
     @ConfigurationParameter(name = PARAM_RELATION_VIEW,mandatory=false)
     private String relationViewName = CAS.NAME_DEFAULT_SOFA;
@@ -452,50 +496,60 @@ EvaluationOfTemporalRelations_ImplBase{
         throw new AnalysisEngineProcessException(e);
       }
 
-      Set<List<EventMention>> relationLookup = new HashSet<>();
+      for(BinaryTextRelation relation : Lists.newArrayList(JCasUtil.select(relationView, BinaryTextRelation.class))){
+        RelationArgument arg1 = relation.getArg1();
+        RelationArgument arg2 = relation.getArg2();
+        if(arg1.getArgument() instanceof TimeMention && arg2.getArgument() instanceof EventMention ||
+            arg1.getArgument() instanceof EventMention && arg2.getArgument() instanceof TimeMention){
+          // these are the kind we keep.
+          continue;
+        }
+        arg1.removeFromIndexes();
+        arg2.removeFromIndexes();
+        relation.removeFromIndexes();
+      }
+    }
+  }
+
+  public static class AddPotentialRelations extends JCasAnnotator_ImplBase {
+    public static final String PARAM_RELATION_VIEW = "RelationView";
+    @ConfigurationParameter(name = PARAM_RELATION_VIEW,mandatory=false)
+    private String relationViewName = CAS.NAME_DEFAULT_SOFA;
+
+    @Override
+    public void process(JCas jCas) throws AnalysisEngineProcessException {
+      JCas relationView;
+      try {
+        relationView = jCas.getView(this.relationViewName);
+      } catch (CASException e) {
+        throw new AnalysisEngineProcessException(e);
+      }
 
       Map<EventMention, Collection<EventMention>> coveringMap =
           JCasUtil.indexCovering(relationView, EventMention.class, EventMention.class);
       for(TemporalTextRelation relation : Lists.newArrayList(JCasUtil.select(relationView, TemporalTextRelation.class))){
         Annotation arg1 = relation.getArg1().getArgument();
         Annotation arg2 = relation.getArg2().getArgument();
-        if(arg1 instanceof EventMention && arg2 instanceof EventMention){
-          EventMention event1 = (EventMention) arg1;
-          EventMention event2 = (EventMention) arg2;
-          for(EventMention covEventA : coveringMap.get(event1)){
-            List<EventMention> key = Arrays.asList(covEventA, event2);
-            if(!relationLookup.contains(key) && !hasOverlap(covEventA,event2)){
-              relationLookup.add(key);
-              createRelation(relationView, covEventA, event2, relation.getCategory());
-            }
-            for(EventMention covEventB : coveringMap.get(event2)){
-              key = Arrays.asList(covEventA, covEventB);
-              if(!relationLookup.contains(key) && !hasOverlap(covEventA,covEventB)){
-                relationLookup.add(key);
-                createRelation(relationView, covEventA, covEventB, relation.getCategory());
-              }
+        EventMention event = null;
+        if(arg1 instanceof EventMention && arg2 instanceof TimeMention){
+          event = (EventMention) arg1;
+          Collection<EventMention> eventList = coveringMap.get(event);
+          for(EventMention covEvent : eventList){
+            if(!covEvent.getClass().equals(EventMention.class)){
+              createRelation(relationView, covEvent, arg2, relation.getCategory());
             }
           }
-          for(EventMention covEventB : coveringMap.get(event2)){
-            List<EventMention> key = Arrays.asList(event1, covEventB);
-            if(!relationLookup.contains(key) && !hasOverlap(event1,covEventB)){
-              relationLookup.add(key);
-              createRelation(relationView, event1, covEventB, relation.getCategory());
+        }else if(arg2 instanceof EventMention && arg1 instanceof TimeMention){
+          event = (EventMention) arg2;
+          Collection<EventMention> eventList = coveringMap.get(event);
+          for(EventMention covEvent : eventList){
+            if(!covEvent.getClass().equals(EventMention.class)){
+              createRelation(relationView, arg1, covEvent, relation.getCategory());
             }
           }
         }
       }
 
-    }
-
-    private static boolean hasOverlap(Annotation event1, Annotation event2) {
-      if(event1.getEnd()>=event2.getBegin()&&event1.getEnd()<=event2.getEnd()){
-        return true;
-      }
-      if(event2.getEnd()>=event1.getBegin()&&event2.getEnd()<=event1.getEnd()){
-        return true;
-      }
-      return false;
     }
 
     private static void createRelation(JCas jCas, Annotation arg1,
@@ -514,6 +568,56 @@ EvaluationOfTemporalRelations_ImplBase{
       relation.setCategory(category);
       relation.addToIndexes();
 
+    }
+  }
+
+  public static class RemoveCrossSentenceRelations extends JCasAnnotator_ImplBase {
+
+    public static final String PARAM_SENTENCE_VIEW = "SentenceView";
+
+    @ConfigurationParameter(name = PARAM_SENTENCE_VIEW,mandatory=false)
+    private String sentenceViewName = CAS.NAME_DEFAULT_SOFA;
+
+    public static final String PARAM_RELATION_VIEW = "RelationView";
+
+    @ConfigurationParameter(name = PARAM_RELATION_VIEW,mandatory=false)
+    private String relationViewName = CAS.NAME_DEFAULT_SOFA;
+
+    @Override
+    public void process(JCas jCas) throws AnalysisEngineProcessException {
+      JCas sentenceView, relationView;
+      try {
+        sentenceView = jCas.getView(this.sentenceViewName);
+        relationView = jCas.getView(this.relationViewName);
+      } catch (CASException e) {
+        throw new AnalysisEngineProcessException(e);
+      }
+
+      // map events and times to the sentences that contain them
+      Map<IdentifiedAnnotation, Integer> sentenceIndex = Maps.newHashMap();
+      int index = -1;
+      for (Sentence sentence : JCasUtil.select(sentenceView, Sentence.class)) {
+        ++index;
+        for (EventMention event : JCasUtil.selectCovered(relationView, EventMention.class, sentence)) {
+          sentenceIndex.put(event, index);
+        }
+        for (TimeMention time : JCasUtil.selectCovered(relationView, TimeMention.class, sentence)) {
+          sentenceIndex.put(time, index);
+        }
+      }
+
+      // remove any relations that are in different sentences.
+      for (BinaryTextRelation relation : Lists.newArrayList(JCasUtil.select(
+          relationView,
+          BinaryTextRelation.class))) {
+        Integer sent1 = sentenceIndex.get(relation.getArg1().getArgument());
+        Integer sent2 = sentenceIndex.get(relation.getArg2().getArgument());
+        if (sent1 == null || sent2 == null || !sent1.equals(sent2)) {
+          relation.getArg1().removeFromIndexes();
+          relation.getArg2().removeFromIndexes();
+          relation.removeFromIndexes();
+        }
+      }
     }
   }
 
@@ -590,6 +694,136 @@ EvaluationOfTemporalRelations_ImplBase{
     }
   }
 
+  public static class AddTransitiveContainsRelations extends JCasAnnotator_ImplBase {
+
+    @Override
+    public void process(JCas jCas) throws AnalysisEngineProcessException {
+
+      // collect many-to-many mappings of containment relations 
+      Multimap<Annotation, Annotation> isContainedIn = HashMultimap.create();
+      Multimap<Annotation, Annotation> contains = HashMultimap.create();
+      Set<BinaryTextRelation> containsRelations = Sets.newHashSet();
+      for (BinaryTextRelation relation : JCasUtil.select(jCas, BinaryTextRelation.class)) {
+        if (relation.getCategory().equals("CONTAINS")) {
+          containsRelations.add(relation);
+          Annotation arg1 = relation.getArg1().getArgument();
+          Annotation arg2 = relation.getArg2().getArgument();
+          contains.put(arg1, arg2);
+          isContainedIn.put(arg2, arg1);
+        }
+      }
+
+      // look for X -> Y -> Z containment chains and add X -> Z relations
+      Deque<Annotation> todo = new ArrayDeque<>(isContainedIn.keySet());
+      while (!todo.isEmpty()) {
+        Annotation next = todo.removeFirst();
+        for (Annotation parent : Lists.newArrayList(isContainedIn.get(next))) {
+          for (Annotation grandParent : Lists.newArrayList(isContainedIn.get(parent))) {
+            if (!isContainedIn.containsEntry(next, grandParent)) {
+              isContainedIn.put(next, grandParent);
+              contains.put(grandParent, next);
+
+              // once X -> Z has been added, we need to re-do all W where W -> X
+              for (Annotation child : contains.get(next)) {
+                todo.add(child);
+              }
+            }
+          }
+        }
+      }
+
+      // remove old relations
+      for (BinaryTextRelation relation : containsRelations) {
+        relation.getArg1().removeFromIndexes();
+        relation.getArg2().removeFromIndexes();
+        relation.removeFromIndexes();
+      }
+
+      // add new, transitive relations
+      for (Annotation contained : isContainedIn.keySet()) {
+        for (Annotation container : isContainedIn.get(contained)) {
+          RelationArgument arg1 = new RelationArgument(jCas);
+          arg1.setArgument(container);
+          RelationArgument arg2 = new RelationArgument(jCas);
+          arg2.setArgument(contained);
+          BinaryTextRelation relation = new BinaryTextRelation(jCas);
+          relation.setArg1(arg1);
+          relation.setArg2(arg2);
+          relation.setCategory("CONTAINS");
+          arg1.addToIndexes();
+          arg2.addToIndexes();
+          relation.addToIndexes();
+        }
+      }
+    }
+
+  }
+
+  public static class AddContain2Overlap extends JCasAnnotator_ImplBase {
+
+    @Override
+    public void process(JCas jCas) throws AnalysisEngineProcessException {
+
+      Set<BinaryTextRelation> containsRelations = Sets.newHashSet();
+      for (BinaryTextRelation relation : JCasUtil.select(jCas, BinaryTextRelation.class)) {
+        if (relation.getCategory().equals("CONTAINS")) {
+          containsRelations.add(relation);
+        }
+      }
+
+      for (BinaryTextRelation relation : containsRelations) {
+        RelationArgument arg1 = (RelationArgument) relation.getArg1().clone();
+        RelationArgument arg2 = (RelationArgument) relation.getArg2().clone();
+        BinaryTextRelation newrelation = new BinaryTextRelation(jCas);
+        newrelation.setArg1(arg1);
+        newrelation.setArg2(arg2);
+        newrelation.setCategory("OVERLAP");
+        arg1.addToIndexes();
+        arg2.addToIndexes();
+        newrelation.addToIndexes();
+      }
+    }
+  }
+
+  public static class AddFlippedOverlap extends JCasAnnotator_ImplBase {
+
+    @Override
+    public void process(JCas jCas) throws AnalysisEngineProcessException {
+
+      Set<BinaryTextRelation> overlapRelations = Sets.newHashSet();
+      Multimap<Annotation, Annotation> overlaps = HashMultimap.create();
+      for (BinaryTextRelation relation : JCasUtil.select(jCas, BinaryTextRelation.class)) {
+        if (relation.getCategory().equals("OVERLAP")) {
+          overlapRelations.add(relation);
+          Annotation arg1 = relation.getArg1().getArgument();
+          Annotation arg2 = relation.getArg2().getArgument();
+          overlaps.put(arg1, arg2);
+        }
+      }
+
+      for (BinaryTextRelation orelation : overlapRelations) {
+        Annotation argA = orelation.getArg1().getArgument();
+        Annotation argB = orelation.getArg2().getArgument();
+        //add overlap 
+        if (!overlaps.containsEntry(argB, argA)) {
+          //create a new flipped relation:
+          RelationArgument arg1 = new RelationArgument(jCas);
+          arg1.setArgument(argB);
+          RelationArgument arg2 = new RelationArgument(jCas);
+          arg2.setArgument(argA);
+          BinaryTextRelation relation = new BinaryTextRelation(jCas);
+          relation.setArg1(arg1);
+          relation.setArg2(arg2);
+          relation.setCategory("OVERLAP");
+          arg1.addToIndexes();
+          arg2.addToIndexes();
+          relation.addToIndexes();
+          overlaps.put(argB, argA);
+        }
+
+      }
+    }
+  }
 
   /**
    * For conflicting temporal relations on the same pair of arguments, if some of the relation types are "overlap", and "contains", remove "overlap" and keep "contains" 
@@ -701,7 +935,7 @@ EvaluationOfTemporalRelations_ImplBase{
         }
       }
 
-      ArrayList<BinaryTextRelation> temporalRelation = new ArrayList<>(annotationsToRelation.values());//new ArrayList<BinaryTextRelation>();
+      ArrayList<BinaryTextRelation> temporalRelation = new ArrayList<>(annotationsToRelation.values());
 
       if (!temporalRelation.isEmpty()){
         TLinkTypeArray2 relationArray = new TLinkTypeArray2(temporalRelation, new AnnotationIdCollection(temporalRelation));
