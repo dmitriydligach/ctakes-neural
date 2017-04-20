@@ -6,7 +6,7 @@ import lib.et_cleartk_io as ctk_io
 import lib.nn_models
 import sys
 import os.path
-import dataset
+import dataset, word2vec
 import keras as k
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
@@ -40,6 +40,9 @@ def main(args):
     pickle.dump(provider.word2int, open(os.path.join(working_dir, 'word2int.p'),"wb"))
     pickle.dump(provider.label2int, open(os.path.join(working_dir, 'label2int.p'),"wb"))
 
+    w2v = word2vec.Model('/home/dima/Data/Word2VecModels/mimic.txt')
+    init_vectors = [w2v.select_vectors(dataset.word2int)]
+
     print 'train_x shape:', train_x.shape
     print 'train_y shape:', train_y.shape
 
@@ -47,7 +50,8 @@ def main(args):
     model.add(Embedding(len(provider.word2int),
                         300,
                         input_length=maxlen,
-                        trainable=True))
+                        trainable=True,
+                        weights=init_vectors))
     model.add(Conv1D(filters=200,
                      kernel_size=5,
                      activation='relu'))
