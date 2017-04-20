@@ -41,7 +41,7 @@ def main(args):
     pickle.dump(provider.label2int, open(os.path.join(working_dir, 'label2int.p'),"wb"))
 
     w2v = word2vec.Model('/home/dima/Data/Word2VecModels/mimic.txt')
-    init_vectors = [w2v.select_vectors(dataset.word2int)]
+    init_vectors = [w2v.select_vectors(provider.word2int)]
 
     print 'train_x shape:', train_x.shape
     print 'train_y shape:', train_y.shape
