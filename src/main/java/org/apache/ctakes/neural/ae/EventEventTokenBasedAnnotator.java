@@ -1,4 +1,4 @@
-package org.apache.ctakes.thyme.ae;
+package org.apache.ctakes.neural.ae;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,13 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.ctakes.relationextractor.ae.features.PartOfSpeechFeaturesExtractor;
 import org.apache.ctakes.temporal.ae.TemporalRelationExtractorAnnotator.IdentifiedAnnotationPair;
-import org.apache.ctakes.temporal.ae.feature.DependencyPathFeaturesExtractor;
-import org.apache.ctakes.temporal.ae.feature.EventArgumentPropertyExtractor;
-import org.apache.ctakes.temporal.ae.feature.OverlappedHeadFeaturesExtractor;
-import org.apache.ctakes.temporal.ae.feature.UmlsFeatureExtractor;
-import org.apache.ctakes.temporal.ae.feature.UnexpandedTokenFeaturesExtractor;
+import org.apache.ctakes.temporal.nn.data.ArgContextProvider;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
 import org.apache.ctakes.typesystem.type.relation.TemporalTextRelation;
@@ -30,7 +25,7 @@ import org.cleartk.util.ViewUriUtil;
 
 import com.google.common.collect.Lists;
 
-public class EventEventFeatureBasedAnnotator extends CleartkAnnotator<String> {
+public class EventEventTokenBasedAnnotator extends CleartkAnnotator<String> {
 
   public static final String NO_RELATION_CATEGORY = "none";
   // private Random coin = new Random(0);
@@ -60,13 +55,6 @@ public class EventEventFeatureBasedAnnotator extends CleartkAnnotator<String> {
       }
     }
 
-    UnexpandedTokenFeaturesExtractor fe1 = new UnexpandedTokenFeaturesExtractor();
-    PartOfSpeechFeaturesExtractor fe2 = new PartOfSpeechFeaturesExtractor();
-    EventArgumentPropertyExtractor fe3 = new EventArgumentPropertyExtractor();
-    UmlsFeatureExtractor fe4 = new UmlsFeatureExtractor();
-    DependencyPathFeaturesExtractor fe5 = new DependencyPathFeaturesExtractor();
-    OverlappedHeadFeaturesExtractor fe6 = new OverlappedHeadFeaturesExtractor();
-    
     for(Sentence sentence : JCasUtil.select(jCas, Sentence.class)) {
       // collect all relevant relation arguments from the sentence
       List<IdentifiedAnnotationPair> candidatePairs = getCandidateRelationArgumentPairs(jCas, sentence);
@@ -76,31 +64,23 @@ public class EventEventFeatureBasedAnnotator extends CleartkAnnotator<String> {
         IdentifiedAnnotation arg1 = pair.getArg1();
         IdentifiedAnnotation arg2 = pair.getArg2();
 
-        List<Feature> allCleartkFeatures = new ArrayList<>();
-        
-        List<Feature> f1 = fe1.extract(jCas, arg1, arg2);
-        List<Feature> f2 = fe2.extract(jCas, arg1, arg2);
-        List<Feature> f3 = fe3.extract(jCas, arg1, arg2);
-        List<Feature> f4 = fe4.extract(jCas, arg1, arg2);
-        List<Feature> f5 = fe5.extract(jCas, arg1, arg2);
-        List<Feature> f6 = fe6.extract(jCas, arg1, arg2);
-        
-        if (f1 != null) allCleartkFeatures.addAll(f1);
-        if (f2 != null) allCleartkFeatures.addAll(f2);
-        if (f3 != null) allCleartkFeatures.addAll(f3);
-        if (f4 != null) allCleartkFeatures.addAll(f4);
-        if (f5 != null) allCleartkFeatures.addAll(f5);
-        if (f6 != null) allCleartkFeatures.addAll(f6);
-        
-        List<Feature> allBinaryFeatures = new ArrayList<>();
-        for(Feature feature : allCleartkFeatures) {
-          if(feature.getName() != null) {
-            String featureName = feature.getName().replaceAll("[\r\n]", " ");
-            String featureValue = feature.getValue().toString().replaceAll("[\r\n]", " ");
-            allBinaryFeatures.add(new Feature(featureName + "_" + featureValue));
-          }
+        String context;
+        if(arg2.getBegin() < arg1.getBegin()) {
+          // ... event2 ... event1 ... scenario
+          System.out.println("\n-------------- THIS NEVER NAPPENS ------------\n");
+          context = ArgContextProvider.getTokenContext(jCas, sentence, arg2, "e2", arg1, "e1", 2); 
+        } else {
+          // ... event1 ... event2 ... scenario
+          context = ArgContextProvider.getTokenContext(jCas, sentence, arg1, "e1", arg2, "e2", 2);
         }
-        
+
+        //derive features based on context:
+        List<Feature> feats = new ArrayList<>();
+        String[] tokens = context.split(" ");
+        for (String token: tokens){
+          feats.add(new Feature(token.toLowerCase()));
+        }
+
         // during training, feed the features to the data writer
         if(this.isTraining()) {
           String category = getRelationCategory(relationLookup, arg1, arg2);
@@ -115,9 +95,9 @@ public class EventEventFeatureBasedAnnotator extends CleartkAnnotator<String> {
           } else{
             category = category.toLowerCase();
           }
-          this.dataWriter.write(new Instance<>(category, allBinaryFeatures));
+          this.dataWriter.write(new Instance<>(category, feats));
         } else {
-          String predictedCategory = this.classifier.classify(allBinaryFeatures);
+          String predictedCategory = this.classifier.classify(feats);
 
           // add a relation annotation if a true relation was predicted
           if (predictedCategory != null && !predictedCategory.equals(NO_RELATION_CATEGORY)) {

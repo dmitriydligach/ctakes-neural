@@ -1,4 +1,4 @@
-package org.apache.ctakes.thyme.keras;
+package org.apache.ctakes.neural.keras;
 
 import java.io.File;
 import java.io.FileNotFoundException;

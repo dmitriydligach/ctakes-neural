@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.ctakes.neural.ae.EventEventFeatureBasedAnnotator;
+import org.apache.ctakes.neural.keras.KerasStringOutcomeDataWriter;
+import org.apache.ctakes.neural.keras.ScriptStringFeatureDataWriter;
 import org.apache.ctakes.relationextractor.eval.RelationExtractorEvaluation.HashableArguments;
 import org.apache.ctakes.temporal.ae.baselines.RecallBaselineEventTimeRelationAnnotator;
 import org.apache.ctakes.temporal.eval.EvaluationOfTemporalRelations_ImplBase;
@@ -42,9 +45,6 @@ import org.apache.ctakes.temporal.eval.EvaluationOfEventEventThymeRelations.Remo
 import org.apache.ctakes.temporal.eval.EvaluationOfEventTimeRelations.ParameterSettings;
 import org.apache.ctakes.temporal.utils.AnnotationIdCollection;
 import org.apache.ctakes.temporal.utils.TLinkTypeArray2;
-import org.apache.ctakes.thyme.ae.EventEventFeatureBasedAnnotator;
-import org.apache.ctakes.thyme.keras.KerasStringOutcomeDataWriter;
-import org.apache.ctakes.thyme.keras.ScriptStringFeatureDataWriter;
 import org.apache.ctakes.typesystem.type.relation.BinaryTextRelation;
 import org.apache.ctakes.typesystem.type.relation.RelationArgument;
 import org.apache.ctakes.typesystem.type.relation.TemporalTextRelation;
