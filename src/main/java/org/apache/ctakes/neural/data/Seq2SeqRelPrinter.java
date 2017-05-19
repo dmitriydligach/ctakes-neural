@@ -183,16 +183,21 @@ public class Seq2SeqRelPrinter {
         }
       }
 
-      List<String> allSentences = new ArrayList<>();    
-
+      List<String> samples = new ArrayList<>();    
       for(Sentence sentence : JCasUtil.select(systemView, Sentence.class)) {
 
-        String annotatedSequence = getAnnotatedSequence(systemView, goldView, sentence);
+        List<EventMention> events = JCasUtil.selectCovered(goldView, EventMention.class, sentence);
+        List<TimeMention> times = JCasUtil.selectCovered(goldView, TimeMention.class, sentence);
+        if(events.size() == 0 || times.size() == 0) {
+          // no event-time relations here
+          continue;
+        }
 
         List<String> labelSequences = new ArrayList<>();
-        for(EventMention event : JCasUtil.selectCovered(goldView, EventMention.class, sentence)) {
-          for(TimeMention time : JCasUtil.selectCovered(goldView, TimeMention.class, sentence)) {
+        String annotatedSequence = getAnnotatedSequence(systemView, goldView, sentence);
 
+        for(EventMention event : events) {
+          for(TimeMention time : times) {
             BinaryTextRelation timeEventRelation = relationLookup.get(Arrays.asList(time, event));
             BinaryTextRelation eventTimeRelation = relationLookup.get(Arrays.asList(event, time));
 
@@ -216,11 +221,11 @@ public class Seq2SeqRelPrinter {
         } else {
           outputText = String.format("%s|%s", annotatedSequence, "NOREL");
         }
-        allSentences.add(outputText);
+        samples.add(outputText);
       }
 
       try {
-        Files.write(Paths.get(outputFile), allSentences, StandardOpenOption.APPEND);
+        Files.write(Paths.get(outputFile), samples, StandardOpenOption.APPEND);
       } catch (IOException e) {
         e.printStackTrace();
       }
