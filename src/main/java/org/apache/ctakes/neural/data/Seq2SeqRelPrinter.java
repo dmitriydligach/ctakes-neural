@@ -259,7 +259,7 @@ public class Seq2SeqRelPrinter {
         }
       }
       
-      return String.join(" ", annotatedSequence);
+      return String.join(" ", annotatedSequence).replaceAll("[\r\n]", " ");
     }
   }
 }
