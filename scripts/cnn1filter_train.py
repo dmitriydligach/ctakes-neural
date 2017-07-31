@@ -16,6 +16,7 @@ from keras.layers import Merge
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv1D, GlobalMaxPooling1D
 from keras.layers.embeddings import Embedding
+from keras import regularizers
 import pickle
 
 def main(args):
@@ -58,11 +59,11 @@ def main(args):
     model.add(GlobalMaxPooling1D())
 
     model.add(Dropout(0.25))
-    model.add(Dense(300))
+    model.add(Dense(300, kernel_regularizer=regularizers.l2(0.001)))
     model.add(Activation('relu'))
 
     model.add(Dropout(0.25))
-    model.add(Dense(classes))
+    model.add(Dense(classes, kernel_regularizer=regularizers.l2(0.001)))
     model.add(Activation('softmax'))
 
     optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08)
