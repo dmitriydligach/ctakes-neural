@@ -27,7 +27,7 @@ dropout_rate = 0.25
 hidden_units = 300
 regul_coeff = 0.001
 
-def get_model(vocab_size, max_seq_len):
+def get_model(vocab_size, max_seq_len, init_vectors):
   """Get model definition"""
 
   model = Sequential()
@@ -76,11 +76,7 @@ def main(args):
     w2v = word2vec.Model('/home/dima/Data/Word2VecModels/mimic.txt')
     init_vectors = [w2v.select_vectors(provider.word2int)]
 
-    print 'train_x shape:', train_x.shape
-    print 'train_y shape:', train_y.shape
-
-
-    model = get_model(len(provider.word2int), maxlen)
+    model = get_model(len(provider.word2int), maxlen, init_vectors)
     optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer,
