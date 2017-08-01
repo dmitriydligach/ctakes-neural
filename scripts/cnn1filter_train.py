@@ -20,33 +20,33 @@ from keras import regularizers
 import pickle
 
 # model parameters
-embed_dim = 300
-num_filters = 200
-filter_size = 5
-dropout_rate = 0.25
-hidden_units = 300
-regul_coeff = 0.001
+EMBED_DIM = 300
+NUM_FILTERS = 200
+FILTER_SIZE = 5
+DROPOUT_RATE = 0.25
+HIDDEN_UNITS = 300
+REGUL_COEF = 0.001
 
-def get_model(vocab_size, max_seq_len, init_vectors, classes):
+def get_model(vocab_size, max_seq_len, init_vectors, num_classes):
   """Get model definition"""
 
   model = Sequential()
   model.add(Embedding(input_dim=vocab_size,
-                      output_dim=300,
+                      output_dim=EMBED_DIM,
                       input_length=max_seq_len,
                       trainable=True,
                       weights=init_vectors))
-  model.add(Conv1D(filters=200,
-                   kernel_size=5,
+  model.add(Conv1D(filters=NUM_FILTERS,
+                   kernel_size=FILTER_SIZE,
                    activation='relu'))
   model.add(GlobalMaxPooling1D())
 
-  model.add(Dropout(0.25))
-  model.add(Dense(300, kernel_regularizer=regularizers.l2(0.001)))
+  model.add(Dropout(DROPOUT_RATE))
+  model.add(Dense(HIDDEN_UNITS, kernel_regularizer=regularizers.l2(REGUL_COEF)))
   model.add(Activation('relu'))
 
-  model.add(Dropout(0.25))
-  model.add(Dense(classes, kernel_regularizer=regularizers.l2(0.001)))
+  model.add(Dropout(DROPOUT_RATE))
+  model.add(Dense(num_classes, kernel_regularizer=regularizers.l2(REGUL_COEF)))
   model.add(Activation('softmax'))
 
   return model
