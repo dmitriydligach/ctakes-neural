@@ -19,6 +19,30 @@ from keras.layers.embeddings import Embedding
 from keras import regularizers
 import pickle
 
+def get_model(vocab_size):
+  """Get model definition"""
+
+  model = Sequential()
+  model.add(Embedding(input_dim=vocab_size,
+                      output_dim=300,
+                      input_length=maxlen,
+                      trainable=True,
+                      weights=init_vectors))
+  model.add(Conv1D(filters=200,
+                   kernel_size=5,
+                   activation='relu'))
+  model.add(GlobalMaxPooling1D())
+
+  model.add(Dropout(0.25))
+  model.add(Dense(300, kernel_regularizer=regularizers.l2(0.001)))
+  model.add(Activation('relu'))
+
+  model.add(Dropout(0.25))
+  model.add(Dense(classes, kernel_regularizer=regularizers.l2(0.001)))
+  model.add(Activation('softmax'))
+
+  return model
+
 def main(args):
     if len(args) < 1:
         sys.stderr.write("Error - one required argument: <data directory>\n")
@@ -47,25 +71,8 @@ def main(args):
     print 'train_x shape:', train_x.shape
     print 'train_y shape:', train_y.shape
 
-    model = Sequential()
-    model.add(Embedding(len(provider.word2int),
-                        300,
-                        input_length=maxlen,
-                        trainable=True,
-                        weights=init_vectors))
-    model.add(Conv1D(filters=200,
-                     kernel_size=5,
-                     activation='relu'))
-    model.add(GlobalMaxPooling1D())
 
-    model.add(Dropout(0.25))
-    model.add(Dense(300, kernel_regularizer=regularizers.l2(0.001)))
-    model.add(Activation('relu'))
-
-    model.add(Dropout(0.25))
-    model.add(Dense(classes, kernel_regularizer=regularizers.l2(0.001)))
-    model.add(Activation('softmax'))
-
+    model = get_model(len(provider.word2int))
     optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer,
