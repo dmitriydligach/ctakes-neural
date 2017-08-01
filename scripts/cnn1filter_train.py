@@ -19,13 +19,21 @@ from keras.layers.embeddings import Embedding
 from keras import regularizers
 import pickle
 
-def get_model(vocab_size):
+# model parameters
+embed_dim = 300
+num_filters = 200
+filter_size = 5
+dropout_rate = 0.25
+hidden_units = 300
+regul_coeff = 0.001
+
+def get_model(vocab_size, max_seq_len):
   """Get model definition"""
 
   model = Sequential()
   model.add(Embedding(input_dim=vocab_size,
                       output_dim=300,
-                      input_length=maxlen,
+                      input_length=max_seq_len,
                       trainable=True,
                       weights=init_vectors))
   model.add(Conv1D(filters=200,
@@ -72,7 +80,7 @@ def main(args):
     print 'train_y shape:', train_y.shape
 
 
-    model = get_model(len(provider.word2int))
+    model = get_model(len(provider.word2int), maxlen)
     optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer,
