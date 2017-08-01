@@ -26,6 +26,9 @@ FILTER_SIZE = 5
 DROPOUT_RATE = 0.25
 HIDDEN_UNITS = 300
 REGUL_COEF = 0.001
+LEARN_RATE = 0.0001
+NUM_EPOCHS = 4
+BATCH_SIZE = 50
 
 def get_model(vocab_size, max_seq_len, init_vectors, num_classes):
   """Get model definition"""
@@ -77,14 +80,14 @@ def main(args):
     init_vectors = [w2v.select_vectors(provider.word2int)]
 
     model = get_model(len(provider.word2int), maxlen, init_vectors, classes)
-    optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08)
+    optimizer = RMSprop(lr=LEARN_RATE, rho=0.9, epsilon=1e-08)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer,
                   metrics=['accuracy'])
     model.fit(train_x,
               train_y,
-              epochs=4,
-              batch_size=50,
+              epochs=NUM_EPOCHS,
+              batch_size=BATCH_SIZE,
               verbose=0,
               validation_split=0.0)
 
