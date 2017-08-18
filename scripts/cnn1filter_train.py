@@ -26,8 +26,8 @@ FILTER_SIZE = 5
 DROPOUT_RATE = 0.25
 HIDDEN_UNITS = 300
 REGUL_COEF = 0.001
-LEARN_RATE = 0.0001
-NUM_EPOCHS = 4
+LEARN_RATE = 0.0005
+NUM_EPOCHS = 8
 BATCH_SIZE = 50
 
 def get_model(vocab_size, max_seq_len, init_vectors, num_classes):
