@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.ctakes.neural.ae.EventEventFeatureBasedAnnotator;
 import org.apache.ctakes.neural.ae.EventEventTokenBasedAnnotator;
 import org.apache.ctakes.neural.keras.KerasStringOutcomeDataWriter;
 import org.apache.ctakes.neural.keras.ScriptStringFeatureDataWriter;
@@ -294,7 +295,7 @@ EvaluationOfTemporalRelations_ImplBase{
       aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(Overlap2Contains.class));
 
       aggregateBuilder.add(
-          AnalysisEngineFactory.createEngineDescription(EventEventTokenBasedAnnotator.class,
+          AnalysisEngineFactory.createEngineDescription(EventEventFeatureBasedAnnotator.class,
               CleartkAnnotator.PARAM_IS_TRAINING,
               true,
               DefaultDataWriterFactory.PARAM_DATA_WRITER_CLASS_NAME,
@@ -347,7 +348,7 @@ EvaluationOfTemporalRelations_ImplBase{
     aggregateBuilder.add(AnalysisEngineFactory.createEngineDescription(RemoveRelations.class));
     
     aggregateBuilder.add(this.baseline ? RecallBaselineEventTimeRelationAnnotator.createAnnotatorDescription(directory) :
-      AnalysisEngineFactory.createEngineDescription(EventEventTokenBasedAnnotator.class,
+      AnalysisEngineFactory.createEngineDescription(EventEventFeatureBasedAnnotator.class,
           CleartkAnnotator.PARAM_IS_TRAINING,
           false,
           GenericJarClassifierFactory.PARAM_CLASSIFIER_JAR_PATH,
