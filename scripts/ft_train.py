@@ -15,6 +15,7 @@ from keras.layers import Merge
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import GlobalAveragePooling1D
 from keras.layers.embeddings import Embedding
+from keras import regularizers
 import pickle
 
 def main(args):
@@ -48,19 +49,21 @@ def main(args):
                         input_length=maxlen))
     model.add(GlobalAveragePooling1D())
 
-    model.add(Dense(100))
+    model.add(Dropout(0.25))
+    model.add(Dense(1000, kernel_regularizer=regularizers.l2(0.00001)))
     model.add(Activation('relu'))
 
-    model.add(Dense(classes))
+    model.add(Dropout(0.25))
+    model.add(Dense(classes, kernel_regularizer=regularizers.l2(0.00001)))
     model.add(Activation('softmax'))
 
-    optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08)
+    optimizer = RMSprop(lr=0.0005, rho=0.9, epsilon=1e-08)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer,
                   metrics=['accuracy'])
     model.fit(train_x,
               train_y,
-              epochs=5,
+              epochs=10,
               batch_size=50,
               verbose=0,
               validation_split=0.0,
